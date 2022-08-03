@@ -1,0 +1,1102 @@
+---
+title: "MQT7015 - Travail pratique 2"
+author:
+- Équipe 1
+- Elsy Tiffanie Akpene Aboh 111 180 502
+- Elhadji Abdou Aziz Sall 111 225 484
+- Loïc Artino 536 756 361
+date: "22 avril 2021"
+output:
+  html_document:
+    code_folding: hide
+    highlight: haddock
+    output: html_document
+    theme: default
+    toc: yes
+    toc_float: yes
+    toc_depth: 2
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+
+# Instructions
+Remettez **deux fichiers R notebook (.Rmd et .html correspondants) avec les codes et les sorties de R, et les résultats commentés**. 
+Ces fichiers doivent être construits en remplissant ce fichier-ci. Les solutions des éxercices des séances vous donnent une idée de la quantité et de la typologie des commentaires requis. Écrivez tout le code de manière qu'on puisse l'exécuter à nouveau en obtenant les mêmes résultats. 
+
+En plus, remettez **un fichier .mp4 avec une présentation critique des résultats** (longueur maximale: 10 minutes; *10 points*). 
+Cette partie requiert les logiciels *Screencast-O-Matic* et *Handbrake*. Pour les télécharger et les utiliser, consultez les tutoriels dans le fichier "Instructions Screencast-O-matic et HandBrake.pdf". Vous devez réaliser une présentation où chaque membre de l’équipe intervient. Screencast-O-Matic va vous aider parce qu’il permet de fusionner facilement des vidéos créés séparément. 
+
+* Résumez *brièvement* la problematique et les réponses sous forme de diapositives. Vous pouvez utiliser les sorties de R, des tableaux, des graphiques et tous les outils qui peuvent aider l’illustration des réponses. Ne pas inclure le code R. 
+* Faites des *commentaires critiques* sur les résultats obtenus, en tenant compte du but de l'analyse. 
+* Avec Screencast-O-Matic, créez une capsule vidéo où vous illustrez vos diapositives. Assurez-vous que la qualité audio ne compromette pas le discours. 
+* Comprimez le fichier mp4 obtenu avec Handbrake.  
+
+
+
+# Exercice 1: Vente de jus d'orange (25 points + 5 points présentation)
+
+## Introduction et description des données 
+Nous voulons étudier les décisions d'achat des clients, en ce qui concerne la vente de jus d'orange. Comme le bénéfice marginal est plus élevé sur la vente de jus d'orange Tropicana que sur le jus d'orange Oasis, on voudrait concevoir des stratégies pour améliorer les ventes de ce jus d'orange et augmenter le chiffre d'affaires global de la chaîne de magasins qui vendent les deux. 
+
+Le fichier `JusOrange.txt` contient les informations sur 1070 achats de jus d'orange Tropicana ou Oasis dans des magasins de la même chaîne. En particulier, il contient des variables sur des caractéristiques du client et du produit:
+
+* `Purchase`: variable avec catégories `Oasis` or `Tropicana`, indiquant si le client a acheté du jus d'orange Oasis or Tropicana
+* `WeekofPurchase`: semaine d'achat
+* `StoreID`: identifiant du magasin (nombre de 1 à 5)
+* `PriceOasis`: prix de référence (avant les rabais) du jus d'orange Oasis
+* `PriceTropicana`: prix de référence (avant les rabais) du jus d'orange Tropicana
+* `ListPriceDiff`: prix de référence du jus d'orange Tropicana moins prix de référence du jus d'orange Oasis
+* `DiscOasis`: rabais offert sur le jus d'orange Oasis
+* `DiscTropicana`: rabais offert sur le jus d'orange Tropicana
+* `PctDiscOasis`: pourcentage de rabais sur le jus d'orange Oasis
+* `PctDiscTropicana`: pourcentage de rabais sur le jus d'orange Tropicana
+* `SpecialOasis`: variable indicatrice de *spécial de la semaine* sur le jus d'orange Oasis (1: spécial, 0: sinon)
+* `SpecialTropicana`: variable indicatrice de *spécial de la semaine* sur le jus d'orange Tropicana (1: spécial, 0: sinon)
+* `SalePriceOasis`: prix de vente du jus d'orange Oasis
+* `SalePriceTropicana`: prix de vente du jus d'orange Tropicana
+* `PriceDiff`: prix de vente du jus d'orange Tropicana moins prix de vente du jus d'orange Oasis
+* `LoyalOasis`: indice de fidélité de la clientèle pour la marque Oasis (nombre entre 0 et 1)
+
+## But de l'analyse
+On souhaite comprendre quelles variables affectent les ventes de jus d'orange de la marque Tropicana, sur la base desquelles les magasins peuvent concevoir des stratégies pour améliorer les ventes de jus d'orange Tropicana et, par conséquent, augmenter le chiffre d'affaires global de la chaîne de magasins. Pour faire ça, on voudrait obtenir un bon modèle pour prédire la probabilité que les clients achètent du jus d'orange Tropicana au lieu du jus d'orange Oasis. 
+
+
+## Tâches à faire:
+
+### Tâche A. (5 points)
+Effectuer une analyse exploratoire des données, afin de se faire une idée des variables qui affectent les ventes de jus d'orange de l'une des deux marques et des relations entre ces variables. 
+
+Commencer par vérifier le type de variables et par les changer si nécessaire. 
+Puis, créer des boîtes à moustaches des variables *numériques* pour les deux classes correspondantes à l'achat de jus d'orange Oasis or Tropicana (variable `Purchase`; utiliser la même limite pour l'axe y, afin de pouvoir les comparer facilement). Pour les variables *qualitatives* et *binaires*, calculer les fréquences dans les deux classes (achats de jus d'orange Oasis ou Tropicana), en utilisant la fonction `table`. 
+Enfin, créer des nuages de points (scatterplots) pour visualiser les relations entre les variables *numériques*, en utilisant deux couleurs différentes pour les deux classes (Oasis et Tropicana) et calculer les corrélations entre elles.
+
+* Quelles variables semblent influencer le choix du jus d'orange Tropicana au lieu d'Oasis? Commenter tous les résultats. 
+* Est-ce qu'il y a des relations entre les variables numériques? Commenter les possibles corrélations et la colinéarité, en tenant également compte de la définition des variables. 
+* Est-ce que la colinéarité pose des problèmes aux arbres de décision et aux méthodes basées sur les arbres de décision (comme par exemple les forêts aléatoires)? Expliquer. 
+
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE}
+
+# PACKAGES
+
+packages<-function(x){
+  x<-as.character(match.call()[[2]])
+  if (!require(x,character.only=TRUE)){
+    install.packages(pkgs=x,repos="http://cran.r-project.org")
+    require(x,character.only=TRUE)
+  }
+}
+packages(tidyverse)
+packages(tree)
+# GESTION DE L'AFFICHAGE DES GGPLOTS
+packages(ggpubr) 
+packages(randomForest)
+packages(ROCR)
+
+# On importe les données dans un dataframe et on affiche les premières lignes
+
+jus_orange = read.csv('~/Downloads/TP2/JusOrange.txt', header = TRUE, sep = ';')
+head(jus_orange)
+```
+\  
+
+Voici les données importées brutes : \n
+
+`r knitr::kable(head(jus_orange))`
+
+Nous vérifions par la suite l'état global du jeu de données :
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE}
+# TYPES DE VARIABLES ET SOMMAIRE
+
+str(jus_orange)
+summary(jus_orange)
+```
+\  
+
+Toutes les données sont de type numérique en dehors de la variable `Purchase` (qui regroupe deux classes, *Oasis* et *Tropicana*), seuls la semaine d'achat, l'identifiant du magasin et les variables binaires `SpecialOasis`et `SpecialTropicana` sont du type entier. La variabl e`WeekofPurchase` peut être considérée comme une variable discrète. Enfin, nous vérifions qu'il n'y ait pas de données manquantes, au nombre de **`r sum(is.na(jus_orange))`**.
+Enfin, la variable `PriceDiff` comporte des valeurs négatives.
+\  
+
+\  
+
+**BOXPLOTS**
+\  
+
+Nous passons la variable catégorielle et les variables binaires en facteurs, et créons les boîtes à moustaches pour toutes les variables *numériques*, en fonction de `Purchase` :
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+jus_orange$Purchase = as.factor(jus_orange$Purchase)
+jus_orange$SpecialOasis = ifelse(jus_orange$SpecialOasis == 1, 'Oui', 'Non')
+jus_orange$SpecialTropicana = ifelse(jus_orange$SpecialTropicana == 1, 'Oui', 'Non')
+jus_orange$SpecialOasis = as.factor(jus_orange$SpecialOasis)
+jus_orange$SpecialTropicana = as.factor(jus_orange$SpecialTropicana)
+sum(is.na(jus_orange))
+
+# BOXPLOTS - VARIABLES NUMÉRIQUES
+
+# par(mfrow = c(2,3))
+# for (i in c(4:10,13:16)){
+# boxplot(jus_orange[,i]~Purchase, data = jus_orange, main = names(jus_orange)[i], ylab = '')
+
+# }
+
+plots = list()
+
+# VERSION GGPLOT
+
+for(i in names(jus_orange[,c(4:10,13:16)])) {
+  plots[[i]] = ggplot(jus_orange, aes(x = Purchase, fill = Purchase)) +
+          geom_boxplot(aes_string(y = i), position = position_dodge(width = .60), show.legend = "none") +
+          theme_minimal()
+}
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]], plots[[10]], plots[[11]], ncol = 2, nrow = 3)
+
+```
+\break
+\  
+
+Nous remarquons plusieurs faits saillants : 
+
+- Pour `PriceOasis` : les clients semblent davantage acheter la marque Tropicana lorsque le prix de la marque Oasis est bas. Au contraire, lorsque le prix de la marque Tropicana est élevé, ils n'ont pas de préférence claire.
+- Pour `PriceTropicana` : la majeure partie  des clients achetant la marque Tropicana semblent acheter cette marque lorsque son prix est plus bas.
+- Pour `ListPriceDiff` : la marque Tropicana est plus chère que la marque Oasis : la différence entre les prix de référence est positive en tout temps. De plus, lorsque la différence de prix est élevée, les clients préfèrent se tourner vers la marque Oasis.
+- Pour `DiscOasis`, `PctDiscOasis` : Ces boîtes à moustaches indiquent que les clients vont très nettement profiter du rabais offert sur la marque Oasis et très peu se tourner vers la marque Tropicana. 
+- Pour `DiscTropicana` et `PctDiscTropicana` : Ces boîtes à moustaches indiquent que les clients vont très nettement profiter du rabais offert sur la marque Tropicana et très peu se tourner vers la marque Oasis en retour. 
+- Pour `SalePriceOasis` : Quand le prix du jus Oasis est élevé, les clients vont acheter la marque Tropicana.
+- Pour `SalePriceTropicana` : Quand le prix de la marque Oasis est élevé, les clients vont se rabattre sur la marque Oasis.
+- Pour `PriceDiff` : Il y a des occurences où le prix de la marque Tropicana était moins élevé que celui du jus Oasis. De manière générale, quand le prix de Tropicana est élevé, les clients vont se tourner vers la marque Oasis.
+- Pour `LoyalOasis` : De manière générale, les clients semblent plus fidèles à la marque Oasis, peu importe la situation.
+\  
+
+\  
+
+**FRÉQUENCES ABSOLUES**
+\  
+
+Nous regardons à présent les fréquences absolues pour les variables non numériques, soit `Purchase`, `SpecialOasis` et `SpecialTropicana` :
+\  
+
+```{r message=FALSE, message=FALSE, results = 'hide', comment=NA, warning=FALSE, echo=TRUE}
+# FRÉQUENCES
+
+freq_absolues_purchase = table(jus_orange$Purchase)
+freq_absolues_oasis = table(jus_orange$SpecialOasis)
+freq_absolues_tropi = table(jus_orange$SpecialTropicana)
+
+```
+\  
+
+`r knitr::kable(freq_absolues_purchase)`
+\  
+
+
+*Pour la marque Oasis*
+\  
+
+`r knitr::kable(freq_absolues_oasis)`
+\  
+
+*Pour la marque Tropicana*
+\  
+
+`r knitr::kable(freq_absolues_tropi)`
+\  
+
+On remarque que les marques sont en spécial **`r round(freq_absolues_oasis[2]/sum(freq_absolues_oasis)*100, 2)`%** des cas pour Oasis et **`r round(freq_absolues_tropi[2]/sum(freq_absolues_tropi)*100, 2)`%** pour la marque Tropicana. On note que la marque Tropicana fait davantage de spéciaux que la marque Oasis, même si les clients semblent préférer la marque Oasis.
+\ 
+
+\  
+
+**NUAGES DE POINTS**
+\  
+
+On regarde ensuite les scatterplots, pour les interactions entre variables numériques : 
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+
+# SCATTERPLOTS
+
+col_jus = ifelse(jus_orange$Purchase == 'Oasis', 'lightblue', 'red')
+par(mfrow = c(1,1))
+plot(jus_orange[,c(4:10,13:16)], col = col_jus)
+
+```
+\  
+
+On remarque que les clients semblent assez bien séparés par leur fidélité à l'une ou l'autre marque de jus. La variabilité semble provenir de l'instant où l'une ou l'autre marque observe un rabais sur son prix habituel : lorsque c'est le cas, davantage de clients semblent se tourner vers la marque en rabais. 
+La variable `PriceDiff`, en étant l'écart de prix, semble fortement influencée par les rabais appliqués sur l'une ou l'autre marque, de même que par le prix de vente final : en effet, ces variations dans les prix viennent réduire ou agrandir l'écart de prix entre les deux marques.
+\  
+
+\  
+
+**CORRÉLATIONS**
+\ 
+
+```{r message=FALSE, message=FALSE, results = 'hide', comment=NA, warning=FALSE, echo=TRUE}
+
+# CORRELATIONS
+
+correlations = cor(jus_orange[,c(2:10,13:16)])
+
+```
+\  
+
+`r knitr::kable(correlations)`
+
+\  
+
+L'analyse des corrélations montre que les prix de référence des jus sont fortement corrélés à la semaine d'achat : les prix de référence augmentent en moyenne avec les semaines. Cela pourrait être dû à l'augmentation des coûts de production, à l'ajustement des prix en fonction de l'inflation, etc...
+\  
+
+Les rabais et les pourcentages de rabais sur les deux marques sont plus ou moins corrélés à la semaine d'achat. Les très fortes corrélations se retrouvent entre les pourcentages de rabais et le rabais en dollars en tant que tel, ce qui est normal, mais on observe également que le prix en rabais du jus Tropicana est fortement corrélé à l'écart de prix `PriceDiff` observé entre les deux marques.
+\  
+
+Les corrélations entre les variables de rabais et les prix de vente sont négatives : quand le rabais augmente, le prix de vente diminue.
+Il semblerait enfin que le magasin joue un léger rôle dans la fidélité des clients pour la marque Oasis.
+\  
+
+
+### Tâche B. (8 points)
+Créer un ensemble d'entraînement contenant un échantillon aléatoire de 750 observations du dataset, et un ensemble de test contenant les observations restantes. *Utiliser le "seed" 2021*. 
+
+Ajuster un arbre de classement sur les données d'entraînement, pour prédire si un client achète du jus d'orange Oasis ou Tropicana en utilisant toutes les autres variables comme prédicteurs. Utiliser comme critère de séparation l'entropie, avec argument `mindev = 0.005`. Regarder les résultats et créer le graphique de l'arbre. 
+
+* Quelle est la taille de l'arbre? Quelle est l'erreur de classement sur l'échantillon d'entraînement? Quelles variables sont utilisées?
+* Commenter la bonté et les characteristiques de l'arbre (en se basant sur les données d'entraînement).
+
+Ensuite, appliquer l'élagage sur l'arbre que vous venez de créer, en utilisant la 10-validation croisée et le taux d'erreur de classification pour choisir le meilleur arbre. *Utiliser le "seed" 28*. Produire un graphique du taux d'erreur de classification en fonction de la taille des sous-arbres et obtenir le sous-arbre de la taille correspondante au plus petit taux d'erreur en validation croisée. Enfin, regarder les résultats et créer le graphique de l'arbre élagué (pour mieux lire les régles et les étiquettes des feuilles, il peut être utile d'utiliser l'argument `cex = 0.7`).
+
+* Quelle est la taille de l'arbre élagué choisi? Quelle est l'erreur de classement sur l'échantillon d'entraînement? Quelles variables sont utilisées?
+* Commenter la bonté et les characteristiques de l'arbre élagué (en se basant sur les données d'entraînement) et le comparer avec l'arbre non élagué. 
+* Quelle est la variable la plus importante dans l'arbre élagué? Expliquer. 
+
+\  
+
+On crée ici un ensemble d'entraînement de 750 observations, choisies aléatoirement. L'ensemble de test contient toutes les autres observations, soit 320 observations.
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE}
+
+set.seed(2021)
+train_index = sample(x = nrow(jus_orange), size = 750, replace = FALSE)
+
+jus_orange_train = jus_orange[train_index,]
+jus_orange_test = jus_orange[-train_index,]
+
+```
+\  
+
+**MODÈLE INITIAL**
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE}
+tree_large_train = tree(Purchase ~ ., data = jus_orange_train, 
+                                control = tree.control(nobs = nrow(jus_orange_train), mindev = 0.005))
+summary(tree_large_train)
+```
+\  
+
+La taille de l'arbre initial est de 20 feuilles. Les variables utilisées sont `LoyalOasis`, `PriceDiff`, `SpecialOasis`, `SalePriceTropicana`, `ListPriceDiff`, `DiscOasis`, `PriceOasis` et `PctDiscOasis`. `SpecialOasis` est la seule des deux variables binaires à être utilisée. L'erreur de classification est de **13.6%**, ce qui semble faible.
+Nous affichons ci-dessous l'arbre et calculons l'erreur totale, ainsi que pour chaque classe :
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+plot(tree_large_train)
+text(tree_large_train, cex = 0.7)
+```
+\  
+
+On peut également calculer les erreurs de classement selon la marque et l'erreur totale :
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE}
+tree_large_pred_test = predict(tree_large_train, jus_orange_test, type = "class")
+head(tree_large_pred_test)
+
+err_tot_tree_large = mean(tree_large_pred_test != jus_orange_test$Purchase)
+err_O_tree_large = mean( (tree_large_pred_test != jus_orange_test$Purchase)[jus_orange_test$Purchase == 'Oasis'] )
+err_T_tree_large = mean( (tree_large_pred_test != jus_orange_test$Purchase)[jus_orange_test$Purchase == 'Tropicana'] )
+err_tree_large = c(err_tot_tree_large, err_O_tree_large, err_T_tree_large)
+errors = cbind(err_tree_large)
+row.names(errors) = c('totale', 'Oasis', 'Tropicana')
+errors
+```
+\  
+
+On remarque que l'erreur totale est d'environ **23.13%**. Le modèle semble mieux classer les achats de jus Tropicana que ceux de la marque Oasis. Nous pouvons réajuster le modèle en élaguant l'arbre :
+\  
+
+\  
+
+**ÉLAGAGE DE L'ARBRE**
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+set.seed(28)
+cv_tree_large_train = cv.tree(tree_large_train, K = 10, FUN = prune.misclass)
+cv_tree_large_train
+plot(cv_tree_large_train)
+```
+\  
+
+D'après le graphique ci-dessus, les erreurs de classement sont au plus faible à partir de 9 feuilles. Nous ajustons le modèle avec comme argument `best = 9`.
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+tree_large_pruned = prune.tree(tree_large_train, best = 9, method = "misclass")
+summary(tree_large_pruned)
+
+plot(tree_large_pruned)
+text(tree_large_pruned, cex = 0.7)
+
+```
+\  
+
+L'arbre élagué comporte 9 feuilles au total. Ici, seulement cinq variables sont utilisées : on retrouve `LoyalOasis`, `ListPriceDiff`, `PriceDiff`, `WeekofPurchase` et `DiscOasis`. Dans ce modèle comme dans le précédent, la fidélité des clients à la marque Oasis semble jouer un rôle important, de même que le rabais appliqué au prix ou la différence de prix entre les marques Oasis et Tropicana. Cependant, l'arbre élagué semble moins précis que l'arbre entier : son erreur de classification est de **14%**, soit environ 0.4 points de plus.
+\  
+
+\  
+
+**COMPARAISON DES DEUX MODÈLES**
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE}
+
+tree_large_pruned_pred_test = predict(tree_large_pruned, jus_orange_test, type = "class")
+
+err_tot_tree_large_pruned = mean(tree_large_pruned_pred_test != jus_orange_test$Purchase)
+err_O_tree_large_pruned = mean( (tree_large_pruned_pred_test != jus_orange_test$Purchase)[jus_orange_test$Purchase == 'Oasis'] )
+err_T_tree_large_pruned = mean( (tree_large_pruned_pred_test != jus_orange_test$Purchase)[jus_orange_test$Purchase == 'Tropicana'] )
+err_tree_large_pruned = c(err_tot_tree_large_pruned, err_O_tree_large_pruned, err_T_tree_large_pruned)
+
+errors = cbind(err_tree_large, err_tree_large_pruned)
+row.names(errors) = c('totale', 'Oasis', 'Tropicana')
+colnames(errors) = c('default', 'large pruned')
+errors
+```
+\  
+
+D'après la matrice, les taux d'erreur totales sont similaires entre les deux modèles, néanmoins, il est à noter que l'arbre élagué performe moins bien sur le classement de la marque Tropicana et mieux sur la marque Oasis.
+On peut également tracer les courbes ROC et retrouver leurs aires sous la courbe :
+\  
+
+\  
+
+**COURBES ROC**
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+tree_large_prob_test = predict(tree_large_train, jus_orange_test)[,'Tropicana']
+tree_large_pruned_prob_test = predict(tree_large_pruned, jus_orange_test)[,'Tropicana']
+
+pred_tree = prediction(tree_large_prob_test, jus_orange_test$Purchase)
+roc_tree = performance(pred_tree, measure = "tpr", x.measure = "fpr")
+
+pred_tree_large_pruned = prediction(tree_large_pruned_prob_test, jus_orange_test$Purchase)
+roc_tree_large_pruned = performance(pred_tree_large_pruned, measure = "tpr", x.measure = "fpr")
+auc = performance(pred_tree, measure = 'auc')
+auc_pruned = performance(pred_tree_large_pruned, measure = 'auc')
+
+plot(roc_tree, col = 'red')
+plot(roc_tree_large_pruned, col = 'green', add = TRUE)
+
+abline(0, 1, col = 'darkgray', lty = 2)
+legend('bottomright', legend = c('Default tree', 'Large tree pruned'), col = c('red', 'green'), lty = 1)
+```
+\  
+
+On voit que le modèle d'arbre élagué performe presque aussi bien que l'arbre initial, les valeurs AUC sont respectivement de **`r auc_pruned@y.values[[1]]`** et **`r auc@y.values[[1]]`**. Le modèle initial est meilleur pour classer des petites valeurs de faux positifs, tandis que le modèle élagué performe mieux sur les grandes valeurs (la courbe verte se situe au-dessus de la courbe rouge). 
+\  
+
+
+### Tâche C. (7 points)
+Utiliser une forêt aléatoire avec 1000 arbres sur les données d'entraînement (avec nombre de prédicteurs considerés à chaque noeud par défaut) pour prédire si un client achète du jus d'orange Oasis ou Tropicana en utilisant toutes les autres variables comme prédicteurs. *Utiliser le "seed" 5*. Régarder les résultats et produire un graphique de l'importance des variables.
+
+* Combien de prédicteurs ont été utilisés à chaque scission? Quels prédicteurs sont les plus importants dans le modèle?
+* Commenter les résultats de classement (erreurs et matrice de confusion) de la méthode avec 1000 arbres sur les données out-of-bag.
+
+Enfin, comparer les erreurs de classement (total et pour chaque classe) sur les données out-of-bag, en fonction du nombre d'arbres de 1 à 1000. Quel nombre d'arbres donne le meilleur résultat? Expliquer.
+\  
+
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE}
+
+set.seed(5)
+
+bag_train = randomForest(x = jus_orange_train[,-1], y = jus_orange_train$Purchase,
+                         mtry = ncol(jus_orange_train), ntree = 1000, importance = TRUE,
+                         xtest = jus_orange_test[,-1], ytest = jus_orange_test$Purchase)
+
+bag_train
+
+```
+
+Les résultats indiquent que 15 variables ont été testées à chaque noeud. Le modèle fait peu d'erreurs out-of-bag (16.67%), légèrement plus sur les données de test (21.88%). Les classes de jus sont mieux prédites dans les données out-of-bag que dans les données de test.
+
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+importance(bag_train)
+
+varImpPlot(bag_train, main = 'Bagging - Jus Orange')
+
+
+```
+\  
+
+Il semblerait que l'indice de fidélité soit la variable la plus importante du modèle, suivi par la différence de prix entre les deux marques et enfin du magasin où le jus a été acheté. Pour ce qui est de la semaine d'achat, son importance dépend du critère d'évaluation du modèle. Au contraire, les clients semblent peu réceptifs au fait que le jus de marque Tropicana soit en spécial ou non.
+
+Matrice des probabilités prédites pour chaque classe pour les données de test :
+\  
+
+
+`r knitr::kable(head(bag_train$test$votes))`
+
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# CHUNK FACULTATIF : ON REPORTE LA COURBE ROC PLUS TARD AVEC LA COMPARAISON
+
+rf_prob_test = bag_train$test$votes[,'Tropicana']
+
+pred_rf = prediction(rf_prob_test, jus_orange_test$Purchase)
+roc_rf = performance(pred_rf, measure = "tpr", x.measure = "fpr")
+auc_rf = performance(pred_rf, measure = "auc")
+
+plot(roc_rf, col = 'red')
+
+abline(0, 1, col = 'darkgray', lty = 2)
+auc = performance(pred_tree, measure = 'auc')
+auc_rf@y.values
+
+```
+\  
+
+Si on observe la courbe ROC du modèle, on se rend compte que celui-ci performe très bien, avec une AUC de **`r auc_rf@y.values[[1]]`**.
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+ntree_max = bag_train$ntree
+rf_err_tot_oob = bag_train$err.rate[, 1]
+rf_err_O_oob = bag_train$err.rate[, 2]
+rf_err_T_oob = bag_train$err.rate[, 3]
+
+par( mfrow = c(1,3) )
+plot(1:ntree_max, rf_err_tot_oob, type = 'b', col = 'blue', xlab = 'Number of trees', ylab = 'Total error rate', main = 'Out-of-bag results')
+plot(1:ntree_max, rf_err_O_oob, type = 'b', col = 'blue', xlab = 'Number of trees', ylab = 'Error rate Oasis', main = 'Out-of-bag results')
+plot(1:ntree_max, rf_err_T_oob, type = 'b', col = 'blue', xlab = 'Number of trees', ylab = 'Error rate Tropicana', main = 'Out-of-bag results')
+```
+\  
+Il semblerait que le taux d'erreur total soit au plus bas avec un nombre maximal d'arbres. Pour la marque Oasis, le meilleur résultat se stabilise aux alentours de 600-800 arbres, tandis que pour la marque Tropicana, le taux d'erreur OOB est au plus faible entre 800 et 1000 arbres.
+\  
+
+### Tâche D. (5 points)
+Comparer les résultats de l'arbre élagué obtenu au point B avec les résultats de la forêt aléatoire avec le nombre d'arbres choisi au point C. *Utiliser le "seed" 5* pour ajuster à nouveau la forêt aléatoire, si nécessaire. 
+En particulier, calculer les erreurs de classement (total et pour chaque classe) sur les données de test, créer les courbes ROC et calculer l'aire sous la courbe ROC correspondante en utilisant les données de test pour les deux méthodes. Commenter tous les résultats et choisir le modèle le meilleur entre les deux. 
+
+Noter que, pour la forêt aléatoire, les classes prédites pour les données de test sont dans la sortie de `randomForest`, à l'intérieur de la liste `test`, dans le vecteur appelé `predicted`. Les probabilités prédites pour chaque classe pour les données de test sont aussi dans la sortie de `randomForest`, à l'intérieur de la liste `test`, dans la matrice appelée `votes`.
+
+\  
+
+```{r message=FALSE, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+rf_pred_test = bag_train$test$predicted
+err_tot_rf = mean(rf_pred_test != jus_orange_test$Purchase)
+err_O_rf = mean( (rf_pred_test != jus_orange_test$Purchase)[jus_orange_test$Purchase == 'Oasis'] )
+err_T_rf = mean( (rf_pred_test != jus_orange_test$Purchase)[jus_orange_test$Purchase == 'Tropicana'] )
+err_rf = c(err_tot_rf, err_O_rf, err_O_rf)
+
+errors = cbind(err_tree_large, err_tree_large_pruned, err_rf)
+row.names(errors) = c('totale', 'Oasis', 'Tropicana')
+colnames(errors) = c('default', 'large pruned', 'random forest')
+errors
+
+plot(roc_tree_large_pruned, col = 'green')
+plot(roc_rf, col = 'blue', add = TRUE)
+
+abline(0, 1, col = 'darkgray', lty = 2)
+legend('bottomright', legend = c('Large tree pruned', 'Random Forest'), col = c('green', 'blue'), lty = 1)
+
+```
+\  
+
+Au niveau des taux d'erreurs, il semblerait que le fait d'élaguer augmente légèrement l'erreur totale. La différence se retrouve dans les erreurs par marque où l'ajustement semble avoir diminué l'erreur de classement pour le jus d'orange Tropicana de **`r round((errors[3,2]-errors[3,1])/errors[3,1]*100, 2)`%**, tandis que le taux d'erreur pour Oasis augmente de **`r round((errors[2,2]-errors[2,1])/errors[2,1]*100, 2)`%**. Les taux d'erreur pour les deux marques sont égaux pour le modèle de forêt aléatoire.
+Le modèle de forêt aléatoire est celui qui possède le taux d'erreur le plus bas dans les trois catégories.
+Pour les courbes ROC, les aires sous la courbe sont respectivement de **`r auc_pruned@y.values[[1]]``** et de **`r auc_rf@y.values[[1]]`** pour l'arbre élagué et la forêt aléatoire. Le modèle aléatoire performe mieux que le modèle ajusté par un élagage.
+\  
+
+\  
+
+# Exercice 2: Taux d'intérêt canadiens en temps de COVID-19 (15 points + 5 points présentation)
+
+## Introduction et description des données 
+Le fichier `yield_curves.csv` contient les rentabilités à l'échéance d'obligations à coupon zéro d'une durée allant de 3 mois à 30 ans, sur une base trimestrielle (120 échéances au total), pour chaque jour de 22 mars 2019 à 30 novembre 2020. Les courbes des rentabilités quotidiennes ont été générées à partir des données des prix des obligations du gouvernement canadien. Ces données peuvent être téléchargées à partir du [site de la Banque du Canada](https://www.bankofcanada.ca/rates/interest-rates/bond-yield-curves). 
+En particulier, le dataset contient les variables suivantes:
+
+* `Date`: date en format année/mois/jour
+* `Yield3m`, `Yield6m`, ..., `Yield360m`: rentabilité à échéance 3 mois, 6 mois, ..., 360 mois (30 ans); 120 variables au total
+
+La courbe des rentabilités (ou structure par termes des taux d'intérêt) représente les rentabilités des obligations d'État en fonction de leur échéance. 
+
+## But de l'analyse
+Le but de l'analyse est de comprendre l'évolution des facteurs de la courbe des rentabilités pendant la période de la COVID-19, afin de clarifier les effets de la pandémie et des politiques monétaires connexes sur les marchés obligataires. 
+
+À la suite du début de l'épidémie de COVID-19, la Banque du Canada a annoncé plusieurs mesures pour réduire la panique sur les marchés, parmi lesquelles on a une réduction considérable du taux cible du financement à un jour de 1,75% à 0,25% en mars 2020. Nous souhaitons évaluer les effets des ces interventions de la Banque du Canada sur la structure par termes des taux d'intérêt, en comparant les courbes des rentabilités avant et au cours de la première vague de COVID-19. 
+
+En particulier, on veut comparer les trois premières composantes principales des courbes des rentabilités. Ces composantes sont interprétées comme niveau, pente et courbure dans [Litterman & Scheinkman (1991)](https://www.math.nyu.edu/faculty/avellane/Litterman1991.pdf). Elles correspondent à des mouvements de la courbe des rentabilités: translation des taux d'intérêt vers le haut ou vers le bas (niveau), incréments à court terme et non à long terme ou vice versa (pente), changements à court et long terme dans une direction et changements aux termes moyens dans la direction opposée (courbure). 
+
+
+## Tâches à faire:
+
+### Tâche A. (4 points)
+Créer deux ensembles des données basés sur les dates: période pré-COVID-19 du 22 mars 2019 au 27 février 2020 et période COVID-19 à partir du 27 mars 2020. Noter qu'on enlève les données du 28 février 2020 au 26 mars 2020, comme c'est la période des interventions de la Banque du Canada et la volatilité est très élevée. 
+
+Pour chacune des deux périodes, calculer les moyennes des rentabilités à chaque échéance, c'est-à-dire pour chacune des 120 variables `Yield3m`, `Yield6m`, ..., `Yield360m`. Créer un graphique de ces moyennes en fonction de l'échéance et le commenter. Ce graphique constitue une sorte de structure par termes des moyennes des taux. En particulier, commenter les différences entre les deux périodes (rentabilités plus ou moins élevées, forme de la courbe, différences entre les rentabilités à différentes échéances). 
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE}
+
+# On importe les données dans un dataframe et on affiche les premières lignes
+
+yd_curves = read.csv('~/Downloads/TP2/yield_curves.csv', header = TRUE, sep = ',')
+head(yd_curves)
+
+str(yd_curves)
+summary(yd_curves)
+```
+\  
+
+`r knitr::kable(head(yd_curves))`
+\  
+
+**SÉPARATION DES SETS DE PÉRIODES PRÉCOVID ET COVID, CALCUL DES TAUX MOYENS ET GRAPHIQUE**
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# AGREGATION
+
+yd_cv_average = matrix(NA, 120, 4, byrow = TRUE) %>%
+  as.data.frame()
+
+  for (i in 2:ncol(yd_curves)) {
+    yd_cv_average[i-1,1] = colnames(yd_curves)[i]
+    yd_cv_average[i-1,2] = mean(yd_curves[1:233,i])
+    yd_cv_average[i-1,3] = mean(yd_curves[234:nrow(yd_curves),i])
+    yd_cv_average[i-1,4] = seq(3,360,3)[i-1]
+  }
+
+# ATTRIBUTION DES NOMS DE COLONNES
+
+colnames(yd_cv_average) = c("Yield", "precovid", "covid", "echeance")
+
+# GRAPHIQUE
+
+ggplot(yd_cv_average, aes(x = echeance)) +
+  geom_jitter(aes(y = precovid, col = 'blue')) +
+  geom_jitter(aes(y = covid, col = 'red')) +
+  scale_color_discrete(labels = c("Période pré-Covid", "Période Covid")) +
+  theme_minimal() +
+  ylim(c(0,2)) +
+  labs(x = "Échéance",
+       y = "Average yield",
+       col = "Situation") +
+  ggtitle("Taux moyens de rentabilité en fonction \n de leur échéance, selon la période") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+```
+\  
+
+Nous constatons qu'après intervention de la banque centrale, les taux à court terme et à long terme ont diminué. Cependant, les taux moyens à CT ont baissé davantage que les taux moyens à LT, ce qui fait que la structure à terme des taux est devenue croissante avec des taux à CT plus bas que les taux à LT. C'est ce que l'on vise. 
+
+Cette baisse s'explique par le fait que, comme les banques vont se financer à des taux interbancaires plus bas au niveau de la banque centrale, elles vont pouvoir prêter aux entreprises à des taux plus bas. Aussi, lorsqu'il y a moins de risque, les investisseurs demandent moins de rendement, ce qui va faire diminuer le niveau des taux de rendement de façon générale, aussi bien pour les taux à CT que pour les taux à LT, et permettra une relance de l'économie.
+
+Les taux à court terme diminuent davantage que les taux à LT. Ainsi, l'intervention gouvernementale à fait en sorte que les différentes parties sur le marché soient rassurées.Ce regain de confiance sur l'avenir a poussé les investisseurs à investir de nouveau sur le long terme et exiger plus de rendement, car ils se privent de leur argent plus longtemps. Pour la première courbe, en rouge, la structure est presque plate (l'amplitude de la courbe est faible), dans le sens où les taux à CT étaient presque équivalents aux taux à LT.
+\  
+
+### Tâche B. (8 points)
+Effectuer une analyse en composantes principales pour les rentabilités à chaque échéance dans les deux périodes. *Ne pas mettre à l'échelle les 120 variables*, puisq'elles ont déjà toutes la même échelle (elles sont des rendements en pourcentage). Considérer seulement les premières trois composantes (qui peuvent être interprétées comme niveau, pente et courbure). 
+
+Pour chaque période:
+* Créer un graphique de la proportion de variance expliquée par chacune des premières trois composantes et un graphique de la variance cumulative expliquée par les premières 1, 2 et 3 composantes. Commenter les résultats. 
+* Visualiser et interpreter les chargements ("loadings") pour les premières trois composantes (à quoi corresponds grossièrement chaque composante?)
+
+\  
+
+
+**MODÈLE EN COMPOSANTES PRINCIPALES**
+\  
+
+*Note : les rangs 1 à 233 concernent les observations pré-Covid. Les rangs 234 jusqu'à la fin concernent les observations en période Covid.*
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE}
+
+pc_yield_precovid = prcomp(yd_curves[1:233,2:121], scale. = FALSE)
+head(pc_yield_precovid)
+
+pc_yield_covid = prcomp(yd_curves[234:nrow(yd_curves),2:121], scale. = FALSE)
+head(pc_yield_covid)
+
+```
+\  
+
+**CALCUL DU PVE ET PVE CUMULÉ**
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+pc_var_precovid = pc_yield_precovid$sdev^2
+PVE_precovid = pc_var_precovid / sum(pc_var_precovid)
+head(PVE_precovid)
+
+pc_var_covid = pc_yield_covid$sdev^2
+PVE_covid = pc_var_covid / sum(pc_var_covid)
+head(PVE_covid)
+
+par(mfrow = c(2,2))
+barplot(PVE_precovid[1:3], ylim = c(0,1), names.arg = paste('PC', 1:3), xlab = 'Components', main = 'PVE - Période pré-COVID', ylab = 'PVE')
+barplot(cumsum(PVE_precovid[1:3]), ylim = c(0,1), names.arg = 1:3, xlab = 'Number of components', main = 'Cumulative PVE - Période pré-COVID', ylab = 'PVE')
+barplot(PVE_covid[1:3], ylim = c(0,1), names.arg = paste('PC', 1:3), xlab = 'Components', main = 'PVE - Période COVID', ylab = 'PVE')
+barplot(cumsum(PVE_covid[1:3]), ylim = c(0,1), names.arg = 1:3, xlab = 'Number of components', main = 'Cumulative PVE - Période COVID', ylab = 'PVE')
+
+```
+\  
+
+Dans les deux périodes, la première composante `PC1` explique plus de 80% de la variance des données. Le reste de la variance est expliqué par les composantes `PC2` et `PC3`. Dans ce cas, il suffit d'utiliser la première composante pour expliquer la majeure partie des données.
+\  
+
+\ 
+
+*Période pré-COVID*
+\  
+
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+loadings = pc_yield_precovid$rotation[,1:3]
+M = ncol(loadings)
+
+par(mfrow = c(3,1))
+for (i in 1:M) {
+  barplot(loadings[,i], ylim = c(-0.4,0.4), main = paste("Principal component ", i))
+  abline(h=0)
+}
+```
+\  
+
+*Période COVID*
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+loadings_covid = pc_yield_covid$rotation[,1:3]
+M = ncol(loadings)
+
+par(mfrow = c(3,1))
+for (i in 1:M) {
+  barplot(loadings_covid[,i], ylim = c(-0.4,0.4), main = paste("Principal component ", i))
+  abline(h=0)
+}
+
+```
+\  
+\  
+
+*Période pré-COVID*
+\  
+
+Pour la composante 1, l'intervention de la banque centrale produit un effet similaire, peu importe l'échéance. Pour la composante 2, l'intervention de la banque centrale produit des effets différents selon que l'échéance soit à court et moyen terme, ou bien à long terme.
+Pour la composante 3, l'intervention a un effet différent, suivant l'échéance à CT, MT ou LT.
+\  
+
+*Période COVID*
+\  
+Pour la composante 1, la tendance est similaire à la composante 1 de la période pré-COVID.
+Pour les composantes 2 et 3, les tendances sont inverses à ce qui est observé pendant la période pré-COVID. 
+
+\  
+
+
+### Tâche C. (2.5 points SUPPLÉMENTAIRES)
+**Cette tâche est OPTIONNELLE**
+
+Pour chaque période et chacune des premières trois composantes principales, créer des graphiques des chocs. C'est-à-dire, des graphiques montrant la courbe des rentabilités moyennes à chaque échéance (la courbe affichée dans le point A), aussi que la courbe des rentabilités moyennes *plus* deux fois l'écart-type de la composante multiplié par le loading de la composante (courbe positivement choquée) et la courbe des rentabilités moyennes *moins* deux fois l'écart-type de la composante multiplié par le loading de la composante (courbe négativement choquée). 
+
+Ces graphiques sont utiles pour bien interpreter l'effet de chaque composante principale sur la courbe des rentabilités moyennes. 
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# PERIODE PRECOVID
+
+# CHOCS POSITIFS
+
+# COMPOSANTE 1
+
+loading_comp_pos_1 = pc_yield_precovid$rotation[,1]
+
+data_courbe_precovid_comp_pos_1 = matrix(0,120,1)
+
+mean_col_pos_precovid = apply(yd_curves[1:233,2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_precovid_comp_pos_1[i] = mean_col_pos_precovid[i] + 2*pc_yield_precovid$sdev[i] * loading_comp_pos_1[i]
+}
+
+# COMPOSANTE 2
+
+loading_comp_pos_2 = pc_yield_precovid$rotation[,2]
+
+data_courbe_precovid_comp_pos_2 = matrix(0,120,1)
+
+mean_col_pos_precovid_2 = apply(yd_curves[1:233,2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_precovid_comp_pos_2[i] = mean_col_pos_precovid_2[i] + 2*pc_yield_precovid$sdev[i] * loading_comp_pos_2[i]
+}
+
+# COMPOSANTE 3
+
+loading_comp_pos_3 = pc_yield_precovid$rotation[,3]
+
+data_courbe_precovid_comp_pos_3 = matrix(0,120,1)
+
+mean_col_pos_precovid_3 = apply(yd_curves[1:233,2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_precovid_comp_pos_3[i] = mean_col_pos_precovid_3[i] + 2*pc_yield_precovid$sdev[i] * loading_comp_pos_3[i]
+}
+
+# CHOCS NEGATIFS
+
+# COMPOSANTE 1
+
+loading_comp_neg_1 = pc_yield_precovid$rotation[,1]
+
+data_courbe_precovid_comp_neg_1 = matrix(0,120,1)
+
+mean_col_neg_precovid = apply(yd_curves[1:233,2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_precovid_comp_neg_1[i] = mean_col_neg_precovid[i] - 2*pc_yield_precovid$sdev[i] * loading_comp_neg_1[i]
+}
+
+# COMPOSANTE 2
+
+loading_comp_neg_2 = pc_yield_precovid$rotation[,2]
+
+data_courbe_precovid_comp_neg_2 = matrix(0,120,1)
+
+mean_col_neg_precovid_2 = apply(yd_curves[1:233,2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_precovid_comp_neg_2[i] = mean_col_neg_precovid_2[i] - 2*pc_yield_precovid$sdev[i] * loading_comp_neg_2[i]
+}
+
+# COMPOSANTE 3
+
+loading_comp_neg_3 = pc_yield_precovid$rotation[,3]
+
+data_courbe_precovid_comp_neg_3 = matrix(0,120,1)
+
+mean_col_neg_precovid_3 = apply(yd_curves[1:233,2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_precovid_comp_neg_3[i] = mean_col_neg_precovid_3[i] - 2*pc_yield_precovid$sdev[i] * loading_comp_neg_3[i]
+}
+
+```
+
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# PERIODE COVID
+
+# CHOCS POSITIFS
+
+# COMPOSANTE 1
+
+loading_comp_pos_1 = pc_yield_covid$rotation[,1]
+
+data_courbe_covid_comp_pos_1 = matrix(0,120,1)
+
+mean_col_pos_covid = apply(yd_curves[234:nrow(yd_curves),2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_covid_comp_pos_1[i] = mean_col_pos_covid[i] + 2*pc_yield_covid$sdev[i] * loading_comp_pos_1[i]
+}
+
+# COMPOSANTE 2
+
+loading_comp_pos_2 = pc_yield_covid$rotation[,2]
+
+data_courbe_covid_comp_pos_2 = matrix(0,120,1)
+
+mean_col_pos_covid_2 = apply(yd_curves[234:nrow(yd_curves),2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_covid_comp_pos_2[i] = mean_col_pos_covid_2[i] + 2*pc_yield_covid$sdev[i] * loading_comp_pos_2[i]
+}
+
+# COMPOSANTE 3
+
+loading_comp_pos_3 = pc_yield_covid$rotation[,3]
+
+data_courbe_covid_comp_pos_3 = matrix(0,120,1)
+
+mean_col_pos_covid_3 = apply(yd_curves[234:nrow(yd_curves),2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_covid_comp_pos_3[i] = mean_col_pos_covid_3[i] + 2*pc_yield_covid$sdev[i] * loading_comp_pos_3[i]
+}
+
+# CHOCS NEGATIFS
+
+# COMPOSANTE 1
+
+loading_comp_neg_1 = pc_yield_covid$rotation[,1]
+
+data_courbe_covid_comp_neg_1 = matrix(0,120,1)
+
+mean_col_neg_covid = apply(yd_curves[234:nrow(yd_curves),2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_covid_comp_neg_1[i] = mean_col_neg_covid[i] - 2*pc_yield_covid$sdev[i] * loading_comp_neg_1[i]
+}
+
+# COMPOSANTE 2
+
+loading_comp_neg_2 = pc_yield_covid$rotation[,2]
+
+data_courbe_covid_comp_neg_2 = matrix(0,120,1)
+
+mean_col_neg_covid_2 = apply(yd_curves[234:nrow(yd_curves),2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_covid_comp_neg_2[i] = mean_col_neg_covid_2[i] - 2*pc_yield_covid$sdev[i] * loading_comp_neg_2[i]
+}
+
+# COMPOSANTE 3
+
+loading_comp_neg_3 = pc_yield_covid$rotation[,3]
+
+data_courbe_covid_comp_neg_3 = matrix(0,120,1)
+
+mean_col_neg_covid_3 = apply(yd_curves[234:nrow(yd_curves),2:121], FUN = mean, 2)
+
+for(i in 1:120) {
+  data_courbe_covid_comp_neg_3[i] = mean_col_neg_covid_3[i] - 2*pc_yield_covid$sdev[i] * loading_comp_neg_3[i]
+}
+
+data_all_precovid = data.frame(mean_col_pos_precovid, data_courbe_precovid_comp_pos_1, data_courbe_precovid_comp_pos_2, data_courbe_precovid_comp_pos_3, data_courbe_precovid_comp_neg_1, data_courbe_precovid_comp_neg_2, data_courbe_precovid_comp_neg_3)
+
+data_all_covid = data.frame(mean_col_pos_covid, data_courbe_covid_comp_pos_1, data_courbe_covid_comp_pos_2, data_courbe_covid_comp_pos_3, data_courbe_covid_comp_neg_1, data_courbe_covid_comp_neg_2, data_courbe_covid_comp_neg_3)
+
+x = seq(3,360,3)
+
+```
+
+\  
+\  
+
+**POUR LA PERIODE PRECOVID**
+
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+ggplot(data_all_precovid, aes(x = x)) +
+  geom_line(aes(y = mean_col_pos_precovid, col = 'green')) +
+  geom_line(aes(y = data_courbe_precovid_comp_pos_1, col = 'red')) +
+  geom_line(aes(y = data_courbe_precovid_comp_neg_1, col = 'blue')) +
+  theme_minimal() +
+  labs(x = "Échéance",
+       y = "Average yield",
+       col = "Situation") +
+  scale_color_discrete(labels = c("Choc positif", "Rentabilité moyenne", "Choc négatif")) +
+  ggtitle("Taux moyens de rentabilité en fonction \n de leur échéance, suivant un choc positif ou négatif - COMPOSANTE 1") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+  
+
+ggplot(data_all_precovid, aes(x = x)) +
+  geom_line(aes(y = mean_col_pos_precovid, col = 'green')) +
+  geom_line(aes(y = data_courbe_precovid_comp_pos_2, col = 'red')) +
+  geom_line(aes(y = data_courbe_precovid_comp_neg_2, col = 'blue')) +
+  theme_minimal() +
+    labs(x = "Échéance",
+       y = "Average yield",
+       col = "Situation") +
+  scale_color_discrete(labels = c("Choc positif", "Rentabilité moyenne", "Choc négatif")) +
+  ggtitle("Taux moyens de rentabilité en fonction \n de leur échéance, suivant un choc positif ou négatif - COMPOSANTE 2") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+
+ggplot(data_all_precovid, aes(x = x)) +
+  geom_line(aes(y = mean_col_pos_precovid, col = 'green')) +
+  geom_line(aes(y = data_courbe_precovid_comp_pos_3, col = 'red')) +
+  geom_line(aes(y = data_courbe_precovid_comp_neg_3, col = 'blue')) +
+  theme_minimal() +
+    labs(x = "Échéance",
+       y = "Average yield",
+       col = "Situation") +
+  scale_color_discrete(labels = c("Choc positif", "Rentabilité moyenne", "Choc négatif")) +
+  ggtitle("Taux moyens de rentabilité en fonction \n de leur échéance, suivant un choc positif ou négatif - COMPOSANTE 3") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+
+```
+\  
+
+Pour la période pré-COVID, on constate que pour la composante 1, quand il y a un choc positif (bonne nouvelle), les taux moyens à court terme augmentent, alors que lorsqu'il y a un choc négatif (mauvaise nouvelle), les taux moyens à court terme diminuent. On constate également que l'impact des chocs est seulement sur le court terme. Il semblerait qu'après un certain temps, l'effet des chocs positif comme négatif s'estompe.
+
+Pour la composante 2, l'effet à court terme est similaire à celui de la composante 1, mais l'effet du choc négatif se prolonge sur le moyen terme.
+
+Pour la composante 3, nous observons l'inverse des situations des deux autres composantes : suite à un choc positif, les taux moyens à court terme diminuent fortement, tandis que ces mêmes taux augmentent suite à un choc négatif. On peut en déduire que cette composante ne permet pas d'expliquer l'effet de la politique de la Banque du Canada.
+
+\  
+
+**POUR LA PERIODE COVID**
+\  
+
+Voici les graphiques pour la période COVID :
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+ggplot(data_all_covid, aes(x = x)) +
+  geom_line(aes(y = mean_col_pos_covid, col = 'green')) +
+  geom_line(aes(y = data_courbe_covid_comp_pos_1, col = 'red')) +
+  geom_line(aes(y = data_courbe_covid_comp_neg_1, col = 'blue')) +
+  theme_minimal() +
+  labs(x = "Échéance",
+       y = "Average yield",
+       col = "Situation") +
+  scale_color_discrete(labels = c("Choc positif", "Rentabilité moyenne", "Choc négatif")) +
+  ggtitle("Taux moyens de rentabilité en fonction \n de leur échéance, suivant un choc positif ou négatif - COMPOSANTE 1") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+  
+
+ggplot(data_all_covid, aes(x = x)) +
+  geom_line(aes(y = mean_col_pos_covid, col = 'green')) +
+  geom_line(aes(y = data_courbe_covid_comp_pos_2, col = 'red')) +
+  geom_line(aes(y = data_courbe_covid_comp_neg_2, col = 'blue')) +
+  theme_minimal() +
+    labs(x = "Échéance",
+       y = "Average yield",
+       col = "Situation") +
+  scale_color_discrete(labels = c("Choc positif", "Rentabilité moyenne", "Choc négatif")) +
+  ggtitle("Taux moyens de rentabilité en fonction \n de leur échéance, suivant un choc positif ou négatif - COMPOSANTE 2") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+
+ggplot(data_all_covid, aes(x = x)) +
+  geom_line(aes(y = mean_col_pos_covid, col = 'green')) +
+  geom_line(aes(y = data_courbe_covid_comp_pos_3, col = 'red')) +
+  geom_line(aes(y = data_courbe_covid_comp_neg_3, col = 'blue')) +
+  theme_minimal() +
+    labs(x = "Échéance",
+       y = "Average yield",
+       col = "Situation") +
+  scale_color_discrete(labels = c("Choc positif", "Rentabilité moyenne", "Choc négatif")) +
+  ggtitle("Taux moyens de rentabilité en fonction \n de leur échéance, suivant un choc positif ou négatif - COMPOSANTE 3") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+
+
+```
+\  
+
+Pour les données en période de crise, pour la composante 1, lorsqu'il y a un choc positif, les taux moyens à CT diminuent alors que lors d'un choc négatif, les taux moyens à CT augmentent. Les chocs ne semblent pas impacter les taux à LT.
+
+Pour la composante 2, on constate l'inverse de la composante 1.
+
+Pour la composante 3, l'effet est similaire à la composante 1, mais est davantage prononcé et plus durable.
+\  
+
+### Tâche D. (3 points)
+Comparer les premières trois composantes principales obtenues pour les deux périodes (avant et au cours de la première vague de COVID-19). Quels ont été les effets de l'intervention de la Banque du Canada sur la structure par termes des taux d'intérêt? 
+
+\  
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+loadings = as.data.frame(loadings)
+loadings_covid = as.data.frame(loadings_covid)
+loadings$x = x
+loadings_covid$x = x
+
+loadings_all = loadings %>%
+  full_join(., loadings_covid, by = c('x' = 'x'))
+
+colnames(loadings_all) = c("PC1_precovid", "PC2_precovid", "PC3_precovid", "x", "PC1_covid", "PC2_covid", "PC3_covid")
+
+pc_1 = ggplot(loadings_all, aes(x = x)) +
+  geom_line(aes(y = PC1_precovid, col = "red")) +
+  geom_line(aes(y = PC1_covid, col = "blue")) +
+    theme_minimal() +
+    labs(x = "Échéance",
+       y = " ",
+       col = "Situation") +
+  scale_color_discrete(labels = c("PC1 pré COVID", "PC1 COVID")) +
+  ggtitle("COMPOSANTE 1") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+
+pc_2 = ggplot(loadings_all, aes(x = x)) +
+  geom_line(aes(y = PC2_precovid, col = "red")) +
+  geom_line(aes(y = PC2_covid, col = "blue")) +
+    theme_minimal() +
+    labs(x = "Échéance",
+       y = " ",
+       col = "Situation") +
+  scale_color_discrete(labels = c("PC1 pré COVID", "PC1 COVID")) +
+  ggtitle("COMPOSANTE 2") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+
+pc_3 = ggplot(loadings_all, aes(x = x)) +
+  geom_line(aes(y = PC3_precovid, col = "red")) +
+  geom_line(aes(y = PC3_covid, col = "blue")) +
+    theme_minimal() +
+    labs(x = "Échéance",
+       y = " ",
+       col = "Situation") +
+  scale_color_discrete(labels = c("PC3 pré COVID", "PC3 COVID")) +
+  ggtitle("COMPOSANTE 3") +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10))
+
+ggarrange(pc_1, pc_2, pc_3, nrow = 3, ncol = 1)
+```
+\ 
+\  
+
+Pour chaque composante, on observe que lorsque la tendance est à la hausse pour l'une des périodes, la tendance est inverse dans l'autre période. Comme vu précédemment à la tâche A, l'effet de l'intervention de la Banque du Canada sur la structure à terme produit une baisse des taux moyens à court terme plus rapide que celle des taux moyens à long terme. Ainsi, après l'intervention en période COVID, la structure à terme est croissante.
+\  
+
