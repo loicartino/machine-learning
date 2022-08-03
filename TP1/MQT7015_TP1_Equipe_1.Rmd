@@ -1,0 +1,553 @@
+---
+title: | 
+  | MQT7015 - Travail pratique 1 |
+author: 
+- Équipe 1
+- Elsy Tiffanie Akpene Aboh 111 180 502
+- Elhadji Abdou Aziz Sall 111 225 484
+- Loïc Artino 536 756 361
+date: "12 mars 2021"
+output:
+  html_document:
+    code_folding: "hide"
+    highlight: haddock
+    output: html_document
+    theme: default
+    toc : true
+    toc_float: true
+    toc_depth: 2
+---
+
+
+# Instructions
+Remettez **deux fichiers R notebook (.Rmd et .html correspondants) avec les codes R et les résultats commentés**. 
+Ces fichiers doivent être construits en remplissant ce fichier-ci. Les solutions des éxercices des séances vous donnent une idée de la quantité et de la typologie des commentaires requis. Écrivez tout le code de manière qu'on puisse l'exécuter à nouveau en obtenant les mêmes résultats. 
+
+
+# Introduction et description des données 
+Nous voulons performer une analyse de la structure du capital des compagnies, inspirée par [Baker & Wurgler (2002)](https://doi.org/10.1111/1540-6261.00414). 
+Pour ce faire, nous étudions plusieurs variables explicatives potentielles pouvant avoir un impact sur le levier financier des entreprises (le ratio de dettes/actifs) avant et après une introduction en bourse (IPO; Initial Public Offering). 
+
+Les informations contenues dans le fichier de données `FirmIPO.csv` proviennent des bases de données de Compustat et de CRSP. Notez que certaines valeurs sont manquantes. Voici les variables et ce qu’elles représentent:
+
+* `gvkey`: identifiant de la firme
+* `IPOfyear`: variable catégorielle reliée aux années fiscales  
+  + `IPOfyear=0` indique la première année fiscale après l’IPO où les valeurs aux marchés apparaissent dans Compustat
+  + `IPOfyear=1` deuxième année fiscale avec des données
+  + `IPOfyear=2` troisième année fiscale…
+  + etc. 
+* `BL`: levier financier comptable (Book Leverage; ratio de dettes/actifs), calculé à partir de valeurs comptables et en pourcentages
+* `ML`: levier financier au marché (Market Leverage; ratio de dettes/actifs), calculé à partir de valeurs aux marchés et en pourcentages
+* `lagMB`: ratio valeur au marché/valeur aux livres (market-to-book), une année auparavant
+* `lagTang`: ratio de tangibilité des actifs (asset tangibility; immobilisations corporelles/actifs), une année auparavant
+* `lagProf`: ratio de profitabilité (revenus/actifs), une année auparavant
+* `lagSize`: taille de la firme en échelle logarithmique, une année auparavant
+* `lagMBefwa`: similaire au ratio market-to-book, avec une “moyenne pondérée par le financement externe” et ce, une année auparavant
+  + Cette variable est définie par l’eq (3) dans [Baker & Wurgler (2002)](https://doi.org/10.1111/1540-6261.00414). C’est une forme particulière de moyenne pondérée, sur les valeurs passées de ratios market-to-book et qui prend en compte le financement externe
+
+Pour chacune des paires de firme (`gvkey`) et d’année fiscale (`IPOfyear`), l’échantillon contient 12 lignes. Chacune de ces lignes correspond à un mois de l’année fiscale de la firme. 
+
+*Note*: le terme *lag* implique un décalage. Pour cet ensemble de données, le lag est d’une année.
+
+
+# But de l'analyse
+Le but de l’analyse est de prédire le levier financier au marché (variable `ML`) en utilisant les variables décalées (`lagMBefwa`, `lagMB`, `lagTang`, `lagProf` et `lagSize`), pour des sous-échantillons identifiés par le même année fiscale. En particulier, on veut établir le rôle de la nouvelle variable `lagMBefwa` dans le modèle. Notez que la variable `lagMBefwa` n’est pas disponible pour l’année fiscale `IPOfyear=1`. 
+
+
+# Tâches à faire:
+
+## Tâche 1. (6 points)
+Le levier financier comptable et le levier financier au marché sont à fréquence mensuelle, alors que les autres variables sont constantes pendant toute l’année fiscale. Il faut donc commencer par transformer les valeurs de levier financier comptable et de levier financier au marché en valeurs annuelles en prenant leur moyenne pour chaqune des paires de firme et d’année fiscale. 
+Faites attention aux valeurs manquantes. Utilisez la fonction `aggregate` de R avec les arguments suivants: `FUN='mean'`, `na.rm=TRUE`, `na.action=NULL` (utilisez la fonction `help` pour savoir la syntaxe et la signification de chaque entrée!).
+
+Après cette transformation, la taille de l’ensemble de données devrait être d’environ 1/12 de celle d’origine. Vérifiez-le. 
+
+Pourquoi est-il important, dans ce cas-ci, d’agréger les différents mois d’une année fiscale pour chaque firme avant d’implémenter un modèle de régression (sur un sous-échantillon identifié par le même année fiscale)? Quelle hypothèse du modèle de régression linéaire n’est pas respectée sinon? Expliquez. 
+
+```{r message=FALSE, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE}
+
+# Utilisation du tidyverse pour la manipulation des données
+library(tidyverse)
+
+# On importe les données dans un dataframe et on affiche les premières lignes
+
+firm_ipo = read.csv("TP1/FirmIPO.csv", header = TRUE, sep = ";")
+head(firm_ipo)
+
+# On vérifie les données
+str(firm_ipo)
+summary(firm_ipo)
+
+# On agrège les données
+
+firm_agg = aggregate(firm_ipo, by = list(firm_ipo$gvkey, firm_ipo$IPOfyear), FUN = 'mean', na.action = NULL, na.rm = TRUE)
+
+# On ne garde pas les colonnes Group.1, Group.2, gvkey et BL, non significatives pour l'analyse
+
+firm_agg = firm_agg[,-c(1:3,5)]
+head(firm_agg)
+
+# On a effectivement environ 1/12 des données d'origine :
+nrow(firm_agg) / nrow(firm_ipo)
+
+```
+
+Voici les données importées brutes : \n
+
+`r knitr::kable(head(firm_ipo))`
+
+Nous vérifions par la suite l'état global du jeu de données :
+
+
+```{r summary_str, message=FALSE, comment=NA, warning=FALSE, echo=TRUE}
+summary(firm_ipo)
+
+str(firm_ipo)
+```
+
+
+La variable `gvkey` de même que `BL` ne sont pas pertinentes pour l'analyse des données car `gvkey` est un identifiant. Nous les enlèverons par la suite.
+Toutes les données sont de type numérique, seuls l'année fiscale et l'identifiant sont du type entier. Enfin, il y a beaucoup de données manquantes, au nombre de **`r sum(is.na(firm_ipo))`**.
+
+Nous devons agréger les données mensuelles afin d'obtenir une moyenne annuelle car sinon, l'hypothèse d'indépendance des erreurs n'est pas respectée. En effet, les données représentant des séries temporelles, les observations mensuelles d'une même année fiscale peuvent être correlées entre elles. Ainsi, on aurait : $cov(\epsilon_i,\epsilon_j) ≠ 0, ~\forall~~i≠j$
+
+Également, nous prenons soin de ne pas considérer les valeurs manquantes dans le calcul des moyennes pour les variables, grâce à l'argument `na.rm = TRUE` de la fonction `aggregate()`.
+
+Voici après agrégation : \n
+
+`r knitr::kable(head(firm_agg))`
+
+Nous obtenons effectivement un sous-ensemble égal à **`r nrow(firm_agg) / nrow(firm_ipo)`**, soit environ 1/12 des données d'origine. Néanmoins, l'agrégation a généré de nombreuses valeurs manquantes que nous allons supprimer dans le cadre de l'analyse.
+
+
+## Tâche 2. (3 points)
+Supprimez les observations qui contiennent des données manquantes de l'ensemble de données, en utilisant la fonction `na.omit`. Combien d'observations reste-t-il en total? Combien d'observations y a-t-il dans chaque sous-échantillon identifié par chaque année fiscale?
+
+```{r message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE}
+
+# Suppression des NA et vérification du nombre d'observations
+
+firm_agg1 = na.omit(firm_agg)
+nrow(firm_agg1)
+
+# On compile le nombre d'observations de chaque sous-échantillon dans un seul tableau récapitulatif 
+
+nb_obs = firm_agg1 %>%
+  group_by(IPOfyear) %>%
+  summarise('Nombre d\'observations' = n())
+
+```
+
+Après avoir utilisé la fonction `na.omit`, il ne reste plus que **`r nrow(firm_agg1)`** observations. Le tableau ci-dessous présente leur nombre, par année fiscale :
+
+`r knitr::kable(nb_obs)`
+
+## Tâche 3. (5 points)
+Pour chaque valeur d’année fiscale `IPOfyear=1,3,5,10`, calculez et affichez le sommaire statistique du levier financier au marché. 
+Puis, créez quatre boîtes à moustaches de cette variable dans les années fiscales `IPOfyear=1,3,5,10`. Utilisez la même limite pour l'axe y, afin de pouvoir les comparer facilement.
+
+Suivant une IPO, est-ce que le levier financier au marché est constant à travers le temps? Si non, comment changent-il?
+
+
+**Sommaire statistique pour `IPOfyear = 1`**
+
+```{r summary_1, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Afficher les sommaires statistiques
+
+firm_agg1 %>%
+  filter(IPOfyear == 1) %>%
+  summary()
+
+```
+
+
+**Sommaire statistique pour `IPOfyear = 3`**
+
+```{r summary_2, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+firm_agg1 %>%
+  filter(IPOfyear == 3) %>%
+  summary(.)
+```
+
+
+**Sommaire statistique pour `IPOfyear = 5`**
+
+```{r summary_3, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+firm_agg1 %>%
+  filter(IPOfyear == 5) %>%
+  summary(.)
+``` 
+
+
+**Sommaire statistique pour `IPOfyear = 10`**
+
+```{r summary_4, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+firm_agg1 %>%
+  filter(IPOfyear == 10) %>%
+  summary(.)
+``` 
+
+```{r ggplot_1, message=FALSE, comment=NA, results='hide', warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Version GGPLOT
+
+ggplot(subset(firm_agg1, IPOfyear %in% c(1,3,5,10)), aes(x = as.factor(IPOfyear),
+                                                         y = ML, 
+                                                         group = IPOfyear)) +
+  geom_boxplot() +
+  labs(x = 'IPOfyear', y = 'Levier financier au marché (ML)') +
+  theme_minimal() +
+  theme(plot.title = element_text(family = 'Helvetica', face = 'bold', hjust = 0.5, size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10)) +
+  ggtitle('Levier financier au marché à travers le temps')
+
+```
+
+Il semblerait que le levier financier augmente lentement au fil des années fiscales : durant la deuxième année fiscale, 50% des entreprises ont un levier financier au marché supérieur à **25.9542**. Pour la quatrième année fiscale, la médiane passe à **30.6981**, à **33.3949** pour la sixième année fiscale et enfin à **35.138** pour la onzième année fiscale. D'autre part, il semblerait que l'amplitude du levier financier au marché diminue au fur et à mesure que les années fiscales s'écoulent.
+
+## Tâche 4. (4 points)
+Pour les valeurs d’années fiscales `IPOfyear=5,10`, créez des nuages de points (scatterplots) pour visualiser les relations entre les variables `ML`, `lagMBefwa`, `lagMB`, `lagTang`, `lagProf` et `lagSize` et calculez les corrélations entre elles.
+
+Commentez sur les types possibles de relations entre les variables et les possibles corrélations.
+
+
+```{r message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Nuages de points pour chaque variable
+
+ipo_5 = firm_agg1[firm_agg1$IPOfyear == 5,]
+ipo_10 = firm_agg1[firm_agg1$IPOfyear == 10,]
+plot(ipo_5[,-1])
+plot(ipo_10[,-1])
+
+# Matrices des corrélations
+
+cor(ipo_5[,-1])
+cor(ipo_10[,-1])
+
+```
+
+Les graphiques ci-dessus, de même que l'analyse de corrélation montrent que les variables `lagMB` et `lagMBefwa` sont corrélées (négativement) au levier financier au marché `ML`, cependant, l'influence de `lagMBefwa`est plus importante lorsque `IPOfyear = 5`. Ces deux variables explicatives sont légèrement corrélées positivement entre elles. On note également une certaine corrélation entre `ML` et les variables `lagTang`, `lagProf`, `lagSize`, avec un niveau de corrélation néanmoins variable selon l'année fiscale. 
+Ainsi, `lagMBefwa`, `lagTang` et `lagSize`semblent plus significativement corrélées avec `ML`lorsque `IPOfyear = 5`, tandis que `lagProf` semble avoir davantage d'influence sur `ML` lorsque `IPOfyear = 10`.
+
+
+## Tâche 5. (2 points)
+Nous voulons prédire le levier financier au marché à partir des prédicteurs `lagMBefwa`, `lagMB`, `lagTang`, `lagProf` et `lagSize` avec un modèle de régression linéaire multiple, en considerant un sous-ensemble de données défini par la même année fiscale.
+
+Écrivez l'équation du modèle et les hypothèses par rapport aux erreurs.
+
+
+L'équation du modèle est telle que :
+
+$ML = \beta_0 + \beta_1~lagMBefwa+\beta_2~lagMB+\beta_3~lagTang+\beta_4~lagProf+\beta_5~lagSize + \epsilon_i$
+
+
+On suppose que :
+
+- Il y a linéarité : $E[Y] = \beta_0 + \beta_1X~~~~ou~~~~y_i = \beta_0+\beta_1x_i+\epsilon_i~~~~avec~~~~E[\epsilon_i]=0 ~~~\forall~~i=1,~...,~n$
+- L'homoscédasticité est respectée : $Var(\epsilon_i) = \sigma^2,~\forall~i=1,...,~n$
+- Les erreurs sont linéairement indépendantes : $cov(\epsilon_i,\epsilon_j)=0,~\forall~i≠j$
+- Les erreurs suivent une loi normale $\epsilon_i\sim N(0,\sigma^2)$
+
+
+## Tâche 6. (10 points)
+Commencez avec la prédiction du levier financier au marché avec le sous-ensemble de données défini par `IPOfyear=5`.  
+
+```{r message=FALSE, comment=NA, results='hide', warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Modèle non ajusté (facultatif)
+
+lm_multi_ipo5 = lm(ML~.-IPOfyear, data = ipo_5)
+summary(lm_multi_ipo5)
+```
+
+
+### 6.a. 
+Effectuez une sélection du meilleur sous-ensemble de variables (best subset selection) selon la somme des carrés résiduels, afin de déterminer les meilleurs modèles pour un nombre de prédicteurs variant de 1 à 5.
+
+Quel est le meilleur modèle sélectionné avec le $R^2$ ajusté? Et avec le $C_p$ de Mallow? Et avec le BIC?
+Choisissez le meilleur des modèles et expliquez votre choix.
+
+```{r message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+library(leaps)
+library(car)
+
+# Création du modèle
+
+regsubsets_full = regsubsets(ML ~ . - IPOfyear, data = ipo_5, nvmax = 5)
+regsubsets_summary = summary(regsubsets_full)
+regsubsets_summary
+```
+
+La fonction `regsubsets()` a créé cinq sous-ensembles. On remarque qu'aucune variable n'a été forcée à l'intérieur du modèle, ou exclue, donc Forced in et Forced out = False. 
+
+Par exemple :
+
+- Le premier sous-ensemble est celui qui inclut `lagMB`.
+- Le second sous-ensemble est celui qui inclut `lagMB` et `lagSize`.
+- Le troisième sous-ensemble est celui qui inclut `lagMBefwa`, `lagMB` et `lagSize`.
+- Le quatrième sous-ensemble est celui qui inclut`lagMBefwa`, `lagMB`, `lagTang` et `lagSize`.
+- Le dernier inclut `lagMBefwa`, `lagMB`, `lagTang`, `lagProf` et `lagSize`. 
+
+Chacun des sous-ensembles peut être évalué selon plusieurs critères.
+Les graphiques ci-dessous vont nous permettre de déterminer quel modèle semble le plus approprié, en fonction de trois critères : le $R^2$ ajusté, le $C_p$ de Mallows ainsi que le BIC.
+
+```{r message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Ajustement et affichage des graphiques
+
+par( mfrow = c(1, 3) )
+
+plot(regsubsets_summary$adjr2, type = 'b', xlab = 'Number of predictors d', ylab = 'Adjusted R squared', main = 'Adjusted R squared')
+best_adjr2 = which.max(regsubsets_summary$adjr2)
+best_rsq = which.max(regsubsets_summary$rsq)
+points(best_adjr2, regsubsets_summary$adjr2[best_adjr2], col = "red", cex = 2, pch=17)
+
+plot(regsubsets_summary$cp, type = 'b', xlab = 'Number of predictors d', ylab = 'Mallow\'s Cp', main = 'Mallow\'s Cp')
+best_cp = which.min(regsubsets_summary$cp)
+points(best_cp, regsubsets_summary$cp[best_cp], col = "red", cex = 2, pch=17)
+
+plot(regsubsets_summary$bic, type = 'b', xlab = 'Number of predictors d', ylab = 'BIC', main = 'BIC')
+best_bic = which.min(regsubsets_summary$bic)
+points(best_bic, regsubsets_summary$bic[best_bic], col = "red", cex = 2, pch=17)
+
+par( mfrow = c(1, 3) )
+
+plot(regsubsets_full, scale = "adjr2", main = 'Adjusted R squared')
+plot(regsubsets_full, scale = "Cp", main = 'Mallow\'s Cp')
+plot(regsubsets_full, scale = "bic", main = 'BIC')
+
+```
+
+
+```{r message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Coefficients
+
+coef_1 = coef(regsubsets_full, 5)
+coef_1
+```
+
+Le modèle optimal dans ce cas semble être celui contenant tous les prédicteurs, en se basant sur les trois critères, qui donnent le même résultat. L'équation est alors la suivante :
+
+\n
+*$ML=`r coef_1[1]``r coef_1[2]`lagMBefwa`r coef_1[3]`lagMB+`r coef_1[4]`lagTang`r coef_1[5]`lagProf+`r coef_1[6]`lagSize$
+
+
+### 6.b. 
+Ajustez le modèle de régression choisi et commentez les résultats (la significativité globale du modèle, la significativité de chaque terme, la variance expliquée par le modèle). 
+
+Vérifiez la validité de la régression en vous basant sur les graphiques des résidus. En particulier, commentez les hypothèses du modèle et la présence de valeurs aberrantes et d'observations influentes. 
+
+Enfin, calculez et commentez les facteurs d’inflation de la variance (VIF).
+
+
+Les coefficients de corrélation entre les variables que nous avons obtenu plus tôt nous indiquent qu'il pourrait y avoir des interactions entre les variables explicatives. Nous décidons de tester cette hypothèse avec un modèle ajusté :
+
+```{r message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Modèle ajusté
+
+lm_adj = lm(ML~ lagMBefwa*lagMB+lagTang+lagProf+lagSize, data = ipo_5)
+summary(lm_adj)
+
+```
+
+```{r message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Graphiques des résidus et VIF
+
+par(mfrow = c(2,2))
+plot(lm_adj)
+vif(lm_adj)
+
+```
+
+Le modèle est significatif, puisque la $p-value$ du test F est inférieure à $2.2\times10^{-16}$. Le modèle est moyennement performant, puisqu'il n'explique que 50% de la variance du levier financier au marché. Les prédicteurs sont significatifs, de même que l'interaction entre `lagMBefwa`et `lagMB` : la valeur du test t pour les coefficients $\beta_j$ est très faible.
+
+L'analyse des résidus montre que l'homoscédasticité ne semble pas vérifiée, car dans le premier graphique, la variabilité augmente avec l'augmentation des valeurs prédites. L'indépendance ne semble pas non plus vérifiée, car lorsque les valeurs prédites augmentent, les résidus diminuent, avant d'augmenter à nouveau. La normalité des résidus semble bonne et, en dehors de quelques valeurs éloignées, aucune ne dépasse la distance de Cook, toutes les valeurs extrêmes sont en dessous de 0.5.
+
+Enfin, le $VIF$ de chacun des coefficients est inférieur à 10, ce qui démontre que la colinéarité des prédicteurs n'est pas forte. Seul celui de la variable représentant l'interaction entre `lagMBefwa` et `lagMB` est plus élevé, mais toujours inférieur à 10.
+
+
+## Tâche 7. (10 points)
+Répétez l’analyse faite au point 6 avec l'année `IPOfyear=10`.
+
+```{r message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Modèle non ajusté (facultatif)
+
+lm_multi_ipo10 = lm(ML~.-IPOfyear, data = ipo_10)
+summary(lm_multi_ipo10)
+```
+
+
+```{r opt_ipo_10_1, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Création des sous ensembles
+
+regsubsets_full_2 = regsubsets(ML ~ . - IPOfyear, data = ipo_10, nvmax = 5)
+regsubsets_summary_2 = summary(regsubsets_full_2)
+regsubsets_summary_2
+
+```
+
+```{r opt_ipo_10_2, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+par( mfrow = c(1, 3) )
+
+plot(regsubsets_summary_2$adjr2, type = 'b', xlab = 'Number of predictors d', ylab = 'Adjusted R squared', main = 'Adjusted R squared')
+best_adjr2_2 = which.max(regsubsets_summary_2$adjr2)
+best_rsq_2 = which.max(regsubsets_summary_2$rsq)
+points(best_adjr2_2, regsubsets_summary_2$adjr2[best_adjr2_2], col = "red", cex = 2, pch=17)
+
+plot(regsubsets_summary_2$cp, type = 'b', xlab = 'Number of predictors d', ylab = 'Mallow\'s Cp', main = 'Mallow\'s Cp')
+best_cp_2 = which.min(regsubsets_summary_2$cp)
+points(best_cp_2, regsubsets_summary_2$cp[best_cp_2], col = "red", cex = 2, pch=17)
+
+plot(regsubsets_summary_2$bic, type = 'b', xlab = 'Number of predictors d', ylab = 'BIC', main = 'BIC')
+best_bic_2 = which.min(regsubsets_summary_2$bic)
+points(best_bic_2, regsubsets_summary_2$bic[best_bic_2], col = "red", cex = 2, pch=17)
+
+par( mfrow = c(1, 3) )
+
+plot(regsubsets_full_2, scale = "adjr2", main = 'Adjusted R squared')
+plot(regsubsets_full_2, scale = "Cp", main = 'Mallow\'s Cp')
+plot(regsubsets_full_2, scale = "bic", main = 'BIC')
+
+coef_2 = coef(regsubsets_full_2, 5)
+
+```
+
+Si on se fie aux trois critères donnant le même meilleur modèle, il semblerait que le meilleur modèle soit celui comportant toutes les variables. Les coefficients de corrélation entre les variables obtenus plus tôt nous indiquent une fois de plus qu'il pourrait y avoir des interactions possibles entre les variables explicatives. Nous décidons de tester cette hypothèse avec un nouveau modèle. Nous avons testé plusieurs modèles, en regardant à chaque fois la significativité de chaque variable et des variables d'interaction. Lorsque celles-ci n'étaient pas significatives, nous les avons retirées. Ainsi, le meilleur modèle obtenu est celui-ci : 
+
+```{r lm_red_2, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Modèle ajusté
+
+lm_adj_2 = lm(ML~ lagMBefwa+lagMB+lagTang+lagProf+lagSize+lagMBefwa:lagSize, data = ipo_10)
+summary(lm_adj_2)
+```
+
+
+```{r plot_ipo_10_vif, message=FALSE, comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+# Grpahiques des résidus et VIF
+
+par(mfrow = c(2,2))
+plot(lm_adj_2)
+
+vif(lm_adj_2)
+```
+
+
+Le modèle est significatif, puisque la $p-value$ du test F est inférieure à $2.2\times10^{-16}$. Le modèle est moins performant, puisqu'il n'explique que 40% de la variance du levier financier au marché. Les prédicteurs sont plus ou moins significatifs et la valeur du test t pour chacun des coefficients $\beta_j$ n'est pas toujours inférieure à $2.2\times10^{-16}$, mais demeure faible.
+L'analyse des résidus montre que l'homoscédasticité ne semble pas vérifiée, les valeurs des résidus se dispersent lorsque les valeurs prédites augmentent. La normalité des résidus semble respectée et, en dehors de quelques valeurs éloignées, aucune ne dépasse la distance de Cook.
+
+On remarque une colinéarité forte avec les variables `lagMBefwa` et la variable d'interaction `lagMBefwa:lagSize`, avec un VIF > 10. Les autres valeurs sont normales (< 10), donc pas de colinéarité. Le modèle ajuste semble mieux expliquer le levier financier au marché que le modèle de base, néanmoins, la variable d'interaction semble avoir introduit de la colinéarité dans le modèle, comme en témoigne les valeurs du VIF.
+
+## Tâche 8. (6 points)
+Ajustez deux modèles de régression pénalisée lasso pour prédire le levier financier au marché à partir des prédicteurs `lagMBefwa`, `lagMB`, `lagTang`, `lagProf` et `lagSize`, un pour le sous-ensemble de données défini par `IPOfyear=5` et un pour `IPOfyear=10`. 
+Créez les graphiques lasso trace (valeurs des coefficients en fonction du paramètre $\lambda$) et utilisez la 10-validation croisée pour choisir la valeur optimale pour le paramètre de réglage $\lambda$ (utilisez `set.seed(2021)`) pour chaque modèle. Commentez tous les résultats.   
+
+\n\n
+**Pour `IPOfyear=5` :**
+
+
+```{r lasso_ipo5, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+library(glmnet)
+
+x = model.matrix(ML ~ lagMBefwa + lagMB + lagTang + lagProf + lagSize, data = ipo_5)[,-1]
+y = ipo_5$ML
+
+# Modèle LASSO
+
+lasso_model = glmnet(x, y, alpha = 1)
+par(mfrow = c(1,2))
+plot(lasso_model, xvar = 'lambda')
+plot(lasso_model, xvar = 'norm')
+
+```
+
+
+**Pour `IPOfyear = 10` :**
+
+```{r lasso_ipo5_10, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+x_1 = model.matrix(ML ~ lagMBefwa + lagMB + lagTang + lagProf + lagSize, data = ipo_10)[,-1]
+y_1 = ipo_10$ML
+
+lasso_model_1 = glmnet(x_1, y_1, alpha = 1)
+par(mfrow = c(1,2))
+plot(lasso_model_1, xvar = 'lambda')
+plot(lasso_model_1, xvar = 'norm')
+
+```
+
+
+```{r cv_lasso_ipo_5_10, message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+
+set.seed(2021)
+
+par(mfrow = c(1,2))
+# Année fiscale 5
+
+cv_lasso = cv.glmnet(x, y, alpha = 1, nfolds = 10)
+plot(cv_lasso)
+
+# Année fiscale 10
+
+cv_lasso_1 = cv.glmnet(x_1, y_1, alpha = 1, nfolds = 10)
+plot(cv_lasso_1)
+
+```
+**Analyse des lasso traces et des MSE en fonction de lambda, pour les deux années fiscales :**
+
+*Pour `IPOfyear = 5`*, deux coefficients semblent stables et proches de zéro lorsque la valeur de lambda est faible, ce qui correspond au modèle à cinq variables. Lorsque lambda augmente, les valeurs des coefficients viennent peu à peu s'annuler au fur et à mesure que la pénalisation du modèle augmente, jusqu'à atteindre zéro. Si on regarde le graphique de la MSE en fonction de $Log(\lambda)$, à gauche, nous observons qu'effectivement, lorsque cette valeur augmente, l'erreur quadratique moyenne augmente très fortement, ce qui n'est pas un bon signe.  
+
+Nous cherchons alors à minimiser la valeur de lambda et trouver sa valeur la plus élevée telle que la MSE est contenu dans un intervalle d'un écart type du lambda minimum (la ligne pointillée du graphique). Pour la sixième année fiscale, on obtient $\lambda=$ **`r round(cv_lasso$lambda.1se, 3)`**. La valeur lambda qui minimise la MSE est **`r round(cv_lasso$lambda.min, 3)`** : cette valeur correspond à notre modèle à cinq variables.  
+
+*Pour `IPOfyear = 10`*, ce sont trois coefficients qui semblent être stables lorsque la valeur de lambda est faible. De même ici, si on regarde le graphique de la MSE en fonction de $Log(\lambda)$, à gauche, nous observons que lorsque cette valeur augmente, l'erreur quadratique moyenne augmente très fortement. Pour la onzième année fiscale, $\lambda=$ **`r round(cv_lasso_1$lambda.1se, 3)`**. La valeur lambda qui minimise la MSE est **`r round(cv_lasso_1$lambda.min, 3)`** : cette valeur correspond à notre modèle à cinq variables.  
+
+Pour conclure, l'analyse des graphiques ci-dessus nous permet de conclure que les meilleurs modèles dans les deux années sont ceux qui contiennent cinq variables explicatives à chaque fois.
+
+
+## Tâche 9. (4 points)
+Organisez les résultats des régressions sélectionnées aux points 6 et 7 dans un tableau affichant les coefficients des termes de régression, les $R^2$ et la taille des sous-échantillons. 
+Organisez les résultats des modèles lasso obtenus au point 8 (utilisez le plus grand `lambda` tel que le MSE est contenu dans un intervalle d'un écart type du minimum, c'est-à-dire `lambda.1se`) dans un tableau affichant les coefficients des termes de régression. 
+
+```{r message=FALSE, results='hide', comment=NA, warning=FALSE, echo=TRUE, fig.align='center'}
+tab_1 = tibble(Observations = c('lagMBefwa', 'lagMB', 'lagTang', 'lagProf', 'lagSize', 'R-squared', 'Adjusted R-squared', 'Taille des sous-échantillons'),
+               'IPOfyear = 5' = as.character(c(coef_1[2], coef_1[3], coef_1[4], coef_1[5], coef_1[6], regsubsets_summary$rsq[best_rsq], regsubsets_summary$adjr2[best_adjr2], nrow(ipo_5))),
+               'IPOfyear = 10' = as.character(c(coef_2[2], coef_2[3], coef_2[4], coef_2[5], coef_2[6], regsubsets_summary_2$rsq[best_rsq_2], regsubsets_summary_2$adjr2[best_adjr2_2], nrow(ipo_10)))) 
+
+tab_2 = tibble(Observations = c('lagMBefwa', 'lagMB', 'lagTang', 'lagProf', 'lagSize', 'lambda.1se'),
+               'IPOfyear = 5' = as.character(c(coef(cv_lasso, s = 'lambda.1se')[2], coef(cv_lasso, s = 'lambda.1se')[3], coef(cv_lasso, s = 'lambda.1se')[4], coef(cv_lasso, s = 'lambda.1se')[5], coef(cv_lasso, s = 'lambda.1se')[6], cv_lasso$lambda.1se)),
+               'IPOfyear = 10' = c(coef(cv_lasso_1, s = 'lambda.1se')[2], coef(cv_lasso_1, s = 'lambda.1se')[3], coef(cv_lasso_1, s = 'lambda.1se')[4], coef(cv_lasso_1, s = 'lambda.1se')[5], coef(cv_lasso_1, s = 'lambda.1se')[6], cv_lasso_1$lambda.1se))
+```
+
+`r knitr::kable(tab_1)`
+
+
+`r knitr::kable(tab_2)`
+
+
+### 9.a. 
+Commentez sur la taille des sous-échantillons, les coefficients de régression et le comportement du $R^2$ dans les deux modèles de régression linéaire multiple. Comparez les coefficients avec ceux des modèles lasso.
+
+Avec près de trois fois moins d'observations, le sous-échantillon `IPOfyear = 10` performe moins bien que dans le cas du sous-échantillon `IPOfyear = 5`, dans lesquels le $R^2 ~ajusté$ est de **`r round(as.numeric(tab_1[6,2]),2)`** et **`r round(as.numeric(tab_1[6,3]),2)`** respectivement.
+Les coefficients retrouvés avec la régression lasso dans les deux sous-échantillons sont sensiblement les mêmes dans les deux types de modèles (régression linéaire multiple et lasso). Les signes des coefficients demeurent les mêmes dans les deux cas pour les deux sous-échantillons.
+Nous pouvons supposer que la meilleure performance du premier modèle de régression linéaire multiple est dû au fait que davantage de données ont été utilisées pour prédire le levier financier.
+
+### 9.b. 
+Comparez les signes des coefficients de `lagMBefwa` et `lagMB`. L'introduction de la variable `lagMBefwa` par Baker & Wurgler (2002) a été utile pour l'analyse? Quels sont les effets d’une augmentation d’une unité de `lagMBefwa` dans les modèles considérés, en conservant les autres facteurs constants?
+
+Les deux variables possèdent le même signe. Il y a une relation négative entre ces dernières et le levier financier au marché, toutes choses étant égales par ailleurs. Ainsi, une augmentation seule d'une unité de `lagMBefwa` provoque une diminution de **`r round(as.numeric(tab_1[1,2]), 4)`** unité de `ML` lors de la sixième année fiscale, et de **`r round(as.numeric(tab_1[1,3]), 4)`** lors de la onzième année fiscale. 
+
+Pour le modèle lasso, une augmentation d'une unité de `lagMBefwa` entraine une variation à la baisse de **`r round(as.numeric(tab_2[1,2]), 4)`** de `ML` pour l'année fiscale six et de **`r round(as.numeric(tab_2[1,3]), 4)`** de ML pour l'année fiscale 11.
+Nous pouvons aussi confirmer, d'après l'analyse des coefficients, qu'il ne semble pas y avoir de colinéarité entre nos variables car les signes des coefficients sont restés identiques si on les compare à ce qu'on avait dans la matrice de corrélation des variables.
+
+Enfin, l'introduction de la variable lagMBefwaw est utile dans l'analyse car elle apparait significative dans tous les différents modèles et pour toutes les périodes considérées. Ainsi, on peut lire dans [Baker & Wurgler (2002)](https://doi.org/10.1111/1540-6261.00414) que : *"The significance of the MBefwa  variable then reflects the fact that leverage depends on the path of market valuations between the IPO and today."*
